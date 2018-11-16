@@ -1,0 +1,75 @@
+---
+title: "The Homeless Population in Las Vegas"
+author: "Liz Lorence"
+date: 2018-11-16
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE)
+library(readr)
+library(tidyverse)
+library(ggplot2)
+homeless <- read_csv("homeless.csv")
+```
+
+## The Severity of Homelessness in Las Vegas
+
+```{r homeless, echo = FALSE, results='hide'}
+ mean_year<-homeless %>%
+  filter(Category == "Total Homeless") %>%
+  group_by(Year) %>%
+  summarise(SouthernNevada = mean(`Number of Homeless People in Southern Nevada`), LasVegas = mean(`Estimated Number of  Homeless People in Las Vegas`)) 
+
+```
+
+```{r meanhomelessgraph, echo = FALSE}
+ggplot(mean_year, aes(Year, SouthernNevada)) +
+  geom_line(aes(color = "Southern Nevada")) +
+  geom_line(aes(Year, LasVegas, color = "Las Vegas")) +
+  expand_limits(y = 0) +
+  ylab("Homeless Population") +
+  ggtitle("Homelessness in Southern Nevada / Las Vegas") +
+  theme_classic() +
+  scale_colour_manual("", values = c("Southern Nevada"="blue", "Las Vegas"="red")) 
+```
+
+```{r lasvegascategory, echo= FALSE}
+category<- homeless %>%
+  rename(Southern_Nevada = `Number of Homeless People in Southern Nevada`) %>%
+  rename(Las_Vegas = `Estimated Number of  Homeless People in Las Vegas`) %>%
+  filter(Category != 'Total Homeless') %>%
+  select(Year, Category,Las_Vegas)
+
+```
+
+```{r categorymap, echo = FALSE}
+ggplot(category, aes(Year,Las_Vegas, color = Category)) +
+  geom_line() + 
+  theme_classic() +
+  scale_colour_manual(values = c("blue","red")) +
+  ggtitle("Las Vegas Homelessness - Sheltered Vs. Unsheltered") +
+  ylab("Homeless Population") +
+  theme(legend.title=element_blank())
+
+```
+
+```{r catbar, echo = FALSE}
+cat<- homeless %>%
+  rename(Southern_Nevada = `Number of Homeless People in Southern Nevada`) %>%
+  rename(Las_Vegas = `Estimated Number of  Homeless People in Las Vegas`) %>%
+  filter(Category != 'Total Homeless') %>%
+  select(Year, Category,Las_Vegas) %>%
+  spread(Category, Las_Vegas) %>%
+  mutate(diff = Sheltered - `Unsheltered Street`)%>% 
+  mutate(color = case_when(diff > 0 ~"Shelted", diff < 0 ~ "Unsheltered"))
+```
+
+```{r categorybar, echo = FALSE}
+ggplot(cat, aes(Year,diff, fill = color)) +
+  geom_col() +
+  theme_classic() +
+  geom_text(aes(label = diff)) +
+  ggtitle("Sheltered - Unsheltered Homelessness in Las Vegas") +
+  scale_fill_manual(values = c("lightblue","pink"))
+
+```
